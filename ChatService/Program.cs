@@ -1,44 +1,40 @@
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ChatService.Configuration;
 using ChatService.Storage;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-
-builder.Services.Configure<CosmosSettings>(builder.Configuration.GetSection("Cosmos"));
-builder.Configuration.Bind("Urls", builder);
-
-// Add Services
-builder.Services.AddSingleton<IUserStore, CosmosUserStorage>();
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton(x =>
 {
-    var cosmosOptions = sp.GetRequiredService<IOptions<CosmosSettings>>();
-    return new CosmosClient(cosmosOptions.Value.ConnectionString);
+    var configuration = builder.Configuration.GetSection("BlobStorage").Get<BlobStorageConfiguration>();
+    return new BlobServiceClient(configuration.ConnectionString);
 });
 
+builder.Services.AddSingleton<IUserStore, CosmosUserStorage>();
+
+builder.Services.AddControllers();
+builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<CosmosSettings>(builder.Configuration.GetSection("Cosmos"));
+builder.Services.Configure<BlobStorageConfiguration>(builder.Configuration.GetSection("BlobStorage"));
 
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
-
-public partial class Program { }

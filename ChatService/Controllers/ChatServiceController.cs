@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ChatService.DTOs;
+using Microsoft.Extensions.Configuration;
 using ChatService.Storage;
+using Azure.Storage.Blobs;
 
 namespace ChatService.Controllers;
 
@@ -9,10 +11,13 @@ namespace ChatService.Controllers;
 public class ChatServiceController : ControllerBase
 {
     private readonly IUserStore _userStore;
+    private readonly BlobServiceClient _blobServiceClient;
     
-    public ChatServiceController(IUserStore userStore)
+    public ChatServiceController(IUserStore userStore, BlobServiceClient blobServiceClient, IConfiguration configuration)
     {
         _userStore = userStore;
+        var connectionString = configuration.GetConnectionString("BlobStorage");
+        _blobServiceClient = new BlobServiceClient(connectionString);
     }
     
     
@@ -41,4 +46,36 @@ public class ChatServiceController : ControllerBase
             
         return Ok(user);
     }
+    
+    [HttpPost]
+    [Route("image")]
+    public async Task<ActionResult<UploadImageResponse>> UploadImage([FromForm] UploadImageRequest request)
+    {
+        if (request.File == null)
+        {
+            return BadRequest("File is required");
+        }
+
+        // Get a reference to the blob container
+        var containerName = "images";
+        var container = _blobServiceClient.GetBlobContainerClient(containerName);
+
+        // Generate a unique image ID
+        var imageId = Guid.NewGuid().ToString();
+
+        // Upload the image to the blob container
+        var blobName = $"{imageId}.jpg";
+        var blobClient = container.GetBlobClient(blobName);
+        await blobClient.UploadAsync(request.File.OpenReadStream(), true);
+
+        // Return the image ID in the response
+        var response = new UploadImageResponse(imageId)
+        {
+            ImageId = imageId
+        };
+        return Ok(response);
+    }
+
+    public record UploadImageRequest(IFormFile File);
+    public record UploadImageResponse(string ImageId);
 }
