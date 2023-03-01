@@ -5,7 +5,7 @@ using ChatService.Storage.Entities;
 
 namespace ChatService.Storage;
 
-public class CosmosUserStorage
+public class CosmosUserStorage : IUserStore
 {
     private readonly CosmosClient _cosmosClient;
     

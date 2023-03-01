@@ -26,6 +26,7 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.0" />
       <PackageReference Include="ServiceStack.Api.Swagger" Version="5.14.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
       <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
       <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
     </ItemGroup>
