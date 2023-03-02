@@ -1,3 +1,3 @@
 namespace ChatService.DTOs;
 
-public record Image(string ImageId ,IFormFile File);
+public record Image(IFormFile File);

@@ -6,3 +6,5 @@ public record User(
     [Required] string FirstName, 
     [Required] string LastName,
     [Required] string ProfilePicId);
+    
+    

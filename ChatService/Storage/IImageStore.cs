@@ -4,7 +4,7 @@ using ChatService.DTOs;
 
 public interface IImageStore
 {
-    Task UploadImage(IFormFile file);
+    Task<string> UploadImage(IFormFile file);
     Task<Image?> GetImageById(string imageId);
     Task DeleteImage(string imageId);
 }

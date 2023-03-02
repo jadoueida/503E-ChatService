@@ -4,6 +4,7 @@ using Azure.Storage.Blobs;
 using ChatService.DTOs;
 using System.Text.Json;
 using ChatService.Storage.Entities;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Azure.Cosmos;
 
 namespace ChatService.Storage;
@@ -31,7 +32,13 @@ public class BlobImageStorage : IImageStore
             {
                 await response.Value.Content.CopyToAsync(ms);
                 var imageBytes = ms.ToArray();
-                var image = new Image(id, new FormFile(new MemoryStream(imageBytes), 0, imageBytes.Length, id, id));
+                if (imageBytes == null)
+                {
+                    return null;
+                }
+                
+                var image = new Image(new FormFile(new MemoryStream(imageBytes), 0, imageBytes.Length, id, id));
+                //remember to add id above
                 return image;
             }
         }
@@ -48,7 +55,7 @@ public class BlobImageStorage : IImageStore
         }
     }
     
-    public async Task UploadImage(IFormFile file)
+    public async Task<string> UploadImage(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -61,6 +68,8 @@ public class BlobImageStorage : IImageStore
         {
             await blobClient.UploadAsync(stream);
         }
+
+        return imageId;
     }
     
     public async Task DeleteImage(string imageId)
@@ -77,20 +86,20 @@ public class BlobImageStorage : IImageStore
         }
     }
     
-    private static ImageEntity ToEntity(DTOs.Image image)
-    {
-        return new ChatService.Storage.Entities.ImageEntity(
-            partitionKey: image.ImageId,
-            ImageId: image.ImageId,
-            file: image.File
-        );
-    }
+   //private static ImageEntity ToEntity(DTOs.Image image)
+   // {
+    //    return new ChatService.Storage.Entities.ImageEntity(
+    //        partitionKey: image.ImageId,
+     //       ImageId: image.ImageId,
+     //       file: image.File
+     //   );
+   // }
 
-    private static Image ToImage(ChatService.Storage.Entities.ImageEntity entity, byte[] data)
-    {
-        return new DTOs.Image(
-           ImageId: entity.ImageId, 
-           File: entity.file
-        );
-    }
+   // private static Image ToImage(ChatService.Storage.Entities.ImageEntity entity, byte[] data)
+   // {
+    //    return new DTOs.Image(
+    //       ImageId: entity.ImageId, 
+     //      File: entity.file
+     //   );
+    //}
 }

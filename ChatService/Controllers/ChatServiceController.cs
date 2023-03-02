@@ -59,17 +59,16 @@ public class ChatServiceController : ControllerBase
         {
             return BadRequest("File cannot be null or empty.");
         }
-
-        await _imageStore.UploadImage(request.File);
-
-        return Ok();
+        var imageId =  await _imageStore.UploadImage(request.File);
+       return new ImageResponse(imageId);
     }
     
     
     
     
-    [HttpGet("{id}")]
-    public async Task<ActionResult<FileContentResult>> DownloadImage(string id)
+    [HttpGet("image/${id}")]
+    
+    public async Task<ActionResult<byte[]>> DownloadImage(string id)
     {
         var image = await _imageStore.GetImageById(id);
 

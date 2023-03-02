@@ -24,6 +24,7 @@ builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection
 //Add services
 
 builder.Services.AddSingleton<IUserStore, CosmosUserStorage>();
+builder.Services.AddSingleton<IImageStore, BlobImageStorage>();
 builder.Services.AddSingleton(sp =>
 {
     var cosmosOptions = sp.GetRequiredService<IOptions<CosmosSettings>>();
