@@ -49,7 +49,7 @@ public class ChatServiceController : ControllerBase
     
     [HttpPost]
     [Route("image")]
-    public async Task<ActionResult<UploadImageResponse>> UploadImage([FromForm] UploadImageRequest request)
+    public async Task<ActionResult<ImageResponse>> UploadImage([FromForm] Image request)
     {
         if (request.File == null)
         {
@@ -69,13 +69,10 @@ public class ChatServiceController : ControllerBase
         await blobClient.UploadAsync(request.File.OpenReadStream(), true);
 
         // Return the image ID in the response
-        var response = new UploadImageResponse(imageId)
+        var response = new ImageResponse(imageId)
         {
             ImageId = imageId
         };
         return Ok(response);
     }
-
-    public record UploadImageRequest(IFormFile File);
-    public record UploadImageResponse(string ImageId);
 }
