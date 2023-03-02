@@ -47,6 +47,8 @@ public class ChatServiceController : ControllerBase
         return Ok(user);
     }
     
+    
+    
     [HttpPost]
     [Route("image")]
     public async Task<ActionResult<ImageResponse>> UploadImage([FromForm] Image request)
@@ -75,4 +77,27 @@ public class ChatServiceController : ControllerBase
         };
         return Ok(response);
     }
+    
+    
+    
+    
+    [HttpGet("images/{id}")]
+    public async Task<ActionResult<FileContentResult>> DownloadImage(string id)
+    {
+        // Get a reference to the blob container
+        var containerName = "images";
+        var container = _blobServiceClient.GetBlobContainerClient(containerName);
+
+        // Get a reference to the image blob
+        var blobName = $"{id}.jpg";
+        var blobClient = container.GetBlobClient(blobName);
+
+        // Download the image from the blob
+        var response = await blobClient.DownloadAsync();
+        var imageStream = response.Value.Content;
+
+        // Return the image as a file content result
+        return File(imageStream, response.Value.ContentType);
+    }
+    
 }
