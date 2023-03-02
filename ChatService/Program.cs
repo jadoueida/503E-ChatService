@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton(x =>
 {
-    var configuration = builder.Configuration.GetSection("BlobStorage").Get<BlobStorageConfiguration>();
+    var configuration = builder.Configuration.GetSection("BlobStorage").Get<BlobStorageSettings.BlobStorageConfiguration>();
     return new BlobServiceClient(configuration.ConnectionString);
 });
 
@@ -21,7 +21,7 @@ builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<CosmosSettings>(builder.Configuration.GetSection("Cosmos"));
-builder.Services.Configure<BlobStorageConfiguration>(builder.Configuration.GetSection("BlobStorage"));
+builder.Services.Configure<BlobStorageSettings.BlobStorageConfiguration>(builder.Configuration.GetSection("BlobStorage"));
 
 var app = builder.Build();
 
