@@ -10,14 +10,16 @@ namespace ChatService.Controllers;
 [Route("[controller]")]
 public class ChatServiceController : ControllerBase
 {
+    private readonly IImageStore _imageStore;
     private readonly IUserStore _userStore;
-    private readonly BlobServiceClient _blobServiceClient;
     
-    public ChatServiceController(IUserStore userStore, BlobServiceClient blobServiceClient, IConfiguration configuration)
+    
+    public ChatServiceController(IUserStore userStore, IImageStore imageStore)
     {
         _userStore = userStore;
-        var connectionString = configuration.GetConnectionString("BlobStorage");
-        _blobServiceClient = new BlobServiceClient(connectionString);
+        _imageStore = imageStore;
+        
+        
     }
     
     
@@ -53,51 +55,30 @@ public class ChatServiceController : ControllerBase
     [Route("image")]
     public async Task<ActionResult<ImageResponse>> UploadImage([FromForm] Image request)
     {
-        if (request.File == null)
+        if (request.File == null || request.File.Length == 0)
         {
-            return BadRequest("File is required");
+            return BadRequest("File cannot be null or empty.");
         }
 
-        // Get a reference to the blob container
-        var containerName = "images";
-        var container = _blobServiceClient.GetBlobContainerClient(containerName);
+        await _imageStore.UploadImage(request.File);
 
-        // Generate a unique image ID
-        var imageId = Guid.NewGuid().ToString();
-
-        // Upload the image to the blob container
-        var blobName = $"{imageId}.jpg";
-        var blobClient = container.GetBlobClient(blobName);
-        await blobClient.UploadAsync(request.File.OpenReadStream(), true);
-
-        // Return the image ID in the response
-        var response = new ImageResponse(imageId)
-        {
-            ImageId = imageId
-        };
-        return Ok(response);
+        return Ok();
     }
     
     
     
     
-    [HttpGet("images/{id}")]
+    [HttpGet("{id}")]
     public async Task<ActionResult<FileContentResult>> DownloadImage(string id)
     {
-        // Get a reference to the blob container
-        var containerName = "images";
-        var container = _blobServiceClient.GetBlobContainerClient(containerName);
+        var image = await _imageStore.GetImageById(id);
 
-        // Get a reference to the image blob
-        var blobName = $"{id}.jpg";
-        var blobClient = container.GetBlobClient(blobName);
+        if (image == null)
+        {
+            return NotFound("This image does not exist");
+        }
 
-        // Download the image from the blob
-        var response = await blobClient.DownloadAsync();
-        var imageStream = response.Value.Content;
-
-        // Return the image as a file content result
-        return File(imageStream, response.Value.ContentType);
+        return Ok(image.File);
     }
-    
 }
+    
