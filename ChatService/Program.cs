@@ -1,3 +1,4 @@
+using System.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -6,22 +7,34 @@ using Microsoft.Extensions.Hosting;
 using ChatService.Configuration;
 using ChatService.Storage;
 using Azure.Storage.Blobs;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton(x =>
-{
-    var configuration = builder.Configuration.GetSection("BlobStorage").Get<BlobStorageSettings.BlobStorageConfiguration>();
-    return new BlobServiceClient(configuration.ConnectionString);
-});
-
-builder.Services.AddSingleton<IUserStore, CosmosUserStorage>();
-
+//Add Services for Container
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
+builder.Services.AddEndpointsApiExplorer();
 
+//Added Configurations
 builder.Services.Configure<CosmosSettings>(builder.Configuration.GetSection("Cosmos"));
-builder.Services.Configure<BlobStorageSettings.BlobStorageConfiguration>(builder.Configuration.GetSection("BlobStorage"));
+builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection("BlobStorage"));
+
+//Add services
+
+builder.Services.AddSingleton<IUserStore, CosmosUserStorage>();
+builder.Services.AddSingleton(sp =>
+{
+    var cosmosOptions = sp.GetRequiredService<IOptions<CosmosSettings>>();
+    return new CosmosClient(cosmosOptions.Value.ConnectionString);
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var blobOptions = sp.GetRequiredService<IOptions<BlobStorageSettings>>();
+    return new BlobServiceClient(blobOptions.Value.ConnectionString);
+});
 
 var app = builder.Build();
 
@@ -36,5 +49,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 app.Run();
