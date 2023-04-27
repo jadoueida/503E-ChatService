@@ -86,7 +86,8 @@ public class ChatServiceController : ControllerBase
     {
         
         var x =await _messageStore.AddMessage(message);
-        return new MessageResponse(x);
+        var messageResponse = new MessageResponse(x);
+        return CreatedAtAction(nameof(AddMessage), messageResponse);
 
     }
 }
