@@ -12,14 +12,14 @@ public class ChatServiceController : ControllerBase
 {
     private readonly IImageStore _imageStore;
     private readonly IUserStore _userStore;
+    private readonly IMessageStore _messageStore;
     
     
-    public ChatServiceController(IUserStore userStore, IImageStore imageStore)
+    public ChatServiceController(IUserStore userStore, IImageStore imageStore, IMessageStore messageStore)
     {
         _userStore = userStore;
         _imageStore = imageStore;
-        
-        
+        _messageStore = messageStore;
     }
     
     
@@ -31,7 +31,6 @@ public class ChatServiceController : ControllerBase
         {
             return Conflict($"A user with username {user.Username} already exists");
         }
-
         await _userStore.UpsertUser(user);
         return CreatedAtAction(nameof(GetUser), new {username = user.Username},
             user); 
@@ -66,7 +65,7 @@ public class ChatServiceController : ControllerBase
     
     
     
-    [HttpGet("image/${id}")]
+    [HttpGet("image/{id}")]
     
     public async Task<ActionResult<byte[]>> DownloadImage(string id)
     {
@@ -79,5 +78,18 @@ public class ChatServiceController : ControllerBase
 
         return Ok(image.File);
     }
+    
+    
+    [HttpPost]
+    [Route("messages")]
+    public async Task<ActionResult<MessageResponse>> AddMessage(MessageRequest message)
+    {
+        
+        var x =await _messageStore.AddMessage(message);
+        return new MessageResponse(x);
+
+    }
 }
+
+
     

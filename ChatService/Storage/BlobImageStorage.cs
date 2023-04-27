@@ -6,6 +6,8 @@ using System.Text.Json;
 using ChatService.Storage.Entities;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Azure.Cosmos;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 
 namespace ChatService.Storage;
 
@@ -19,7 +21,7 @@ public class BlobImageStorage : IImageStore
         _blobServiceClient = blobServiceClient;
         _containerName = configuration.GetValue<string>("BlobStorage:ContainerName");
     }
-    
+
     public async Task<Image?> GetImageById(string id)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
@@ -36,9 +38,18 @@ public class BlobImageStorage : IImageStore
                 {
                     return null;
                 }
-                
-                var image = new Image(new FormFile(new MemoryStream(imageBytes), 0, imageBytes.Length, id, id));
-                //remember to add id above
+
+                var fileContent = new StreamContent(new MemoryStream(imageBytes));
+                var contentDisposition = new ContentDispositionHeaderValue("inline");
+                contentDisposition.Parameters.Add(new NameValueHeaderValue("filename", id));
+                fileContent.Headers.ContentDisposition = contentDisposition;
+                var image = new Image(new FormFile(
+                    fileContent.ReadAsStreamAsync().Result,
+                    0,
+                    imageBytes.Length,
+                    id,
+                    id
+                ));
                 return image;
             }
         }
@@ -53,8 +64,9 @@ public class BlobImageStorage : IImageStore
                 throw;
             }
         }
+
     }
-    
+
     public async Task<string> UploadImage(IFormFile file)
     {
         if (file == null || file.Length == 0)
