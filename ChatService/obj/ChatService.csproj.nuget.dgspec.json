@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/jadoueida/Desktop/EECE 503E/ChatServiceController/ChatService/ChatService.csproj": {}
+    "/Users/karimshammas/Desktop/AUB/Current Sem/EECE 503E/PROJECT/503E-ChatService/ChatService/ChatService.csproj": {}
   },
   "projects": {
-    "/Users/jadoueida/Desktop/EECE 503E/ChatServiceController/ChatService/ChatService.csproj": {
+    "/Users/karimshammas/Desktop/AUB/Current Sem/EECE 503E/PROJECT/503E-ChatService/ChatService/ChatService.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/jadoueida/Desktop/EECE 503E/ChatServiceController/ChatService/ChatService.csproj",
+        "projectUniqueName": "/Users/karimshammas/Desktop/AUB/Current Sem/EECE 503E/PROJECT/503E-ChatService/ChatService/ChatService.csproj",
         "projectName": "ChatService",
-        "projectPath": "/Users/jadoueida/Desktop/EECE 503E/ChatServiceController/ChatService/ChatService.csproj",
-        "packagesPath": "/Users/jadoueida/.nuget/packages/",
-        "outputPath": "/Users/jadoueida/Desktop/EECE 503E/ChatServiceController/ChatService/obj/",
+        "projectPath": "/Users/karimshammas/Desktop/AUB/Current Sem/EECE 503E/PROJECT/503E-ChatService/ChatService/ChatService.csproj",
+        "packagesPath": "/Users/karimshammas/.nuget/packages/",
+        "outputPath": "/Users/karimshammas/Desktop/AUB/Current Sem/EECE 503E/PROJECT/503E-ChatService/ChatService/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/jadoueida/.nuget/NuGet/NuGet.Config"
+          "/Users/karimshammas/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
@@ -90,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/Users/jadoueida/.dotnet/sdk/7.0.101/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/Users/karimshammas/.dotnet/sdk/7.0.200/RuntimeIdentifierGraph.json"
         }
       }
     }
