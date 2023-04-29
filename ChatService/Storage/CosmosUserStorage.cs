@@ -74,6 +74,8 @@ public class CosmosUserStorage : IUserStore
         }
     }
     
+    
+    //WHY STATIC
     private static UserEntity ToEntity(DTOs.User user)
     {
         return new ChatService.Storage.Entities.UserEntity(

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using ChatService.Configuration;
 using ChatService.Storage;
 using Azure.Storage.Blobs;
+using ChatService.Services;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 
@@ -26,6 +27,12 @@ builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection
 builder.Services.AddSingleton<IUserStore,CosmosUserStorage>();
 builder.Services.AddSingleton<IMessageStore,CosmosMessageStore>();
 builder.Services.AddSingleton<IImageStore, BlobImageStorage>();
+builder.Services.AddSingleton<IConversationStore, CosmosConversationStore>();
+builder.Services.AddSingleton<IConversationParticipantStore, CosmosConversationParticipantStore>();
+builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IImageService, ImageService>();
+builder.Services.AddSingleton<IMessageService, MessageService>();
+builder.Services.AddSingleton<IConversationService, ConversationService>();
 builder.Services.AddSingleton(sp =>
 {
     var cosmosOptions = sp.GetRequiredService<IOptions<CosmosSettings>>();

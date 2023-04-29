@@ -19,19 +19,22 @@ public class CosmosMessageStore : IMessageStore
     private Container Container => _cosmosClient.GetDatabase("messages").GetContainer("messages");
 
 
-    public async Task<long> AddMessage(DTOs.MessageRequest message)
+    public async Task<long> AddMessage(DTOs.Message message)
     {
         if (message == null ||
             string.IsNullOrWhiteSpace(message.MessageId) ||
             string.IsNullOrWhiteSpace(message.SenderUsername) ||
-            string.IsNullOrWhiteSpace(message.Text))
+            string.IsNullOrWhiteSpace(message.Text) ||
+            string.IsNullOrWhiteSpace(message.ConversationId) ||
+            string.IsNullOrWhiteSpace(message.CreatedUnixTime.ToString()))
+                
         {
-            throw new ArgumentException($"Invalid profile {message}", nameof(message));
+            throw new ArgumentException($"Invalid message {message}", nameof(message));
         }
 
-        var y = ToEntity(message);
-        await Container.UpsertItemAsync(y);
-        return y.CreatedUnixTime;
+        var messageEntity = ToEntity(message);
+        await Container.UpsertItemAsync(messageEntity);
+        return messageEntity.CreatedUnixTime;
     }
 
 
@@ -60,14 +63,14 @@ public class CosmosMessageStore : IMessageStore
 //}
 
 
-    private static MessageEntity ToEntity(DTOs.MessageRequest message)
+    private static MessageEntity ToEntity(Message message)
     {
-        return new ChatService.Storage.Entities.MessageEntity(
+        return new MessageEntity(
             id: message.MessageId,
-            ConversationId: Guid.NewGuid().ToString(),
+            ConversationId: message.ConversationId,
             SenderUsername: message.SenderUsername,
             Text: message.Text,
-            CreatedUnixTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            CreatedUnixTime: message.CreatedUnixTime
         );
     }
 }

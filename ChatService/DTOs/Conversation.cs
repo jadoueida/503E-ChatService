@@ -1,6 +1,6 @@
 namespace ChatService.DTOs;
 
-public record ConversationResponse(
+public record Conversation(
     string ConversationId,
-    int CreatedUnixTime
+    long ModifiedUnixTime
     );

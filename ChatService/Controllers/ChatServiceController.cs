@@ -3,6 +3,7 @@ using ChatService.DTOs;
 using Microsoft.Extensions.Configuration;
 using ChatService.Storage;
 using Azure.Storage.Blobs;
+using ChatService.Services;
 
 namespace ChatService.Controllers;
 
@@ -10,28 +11,30 @@ namespace ChatService.Controllers;
 [Route("[controller]")]
 public class ChatServiceController : ControllerBase
 {
-    private readonly IImageStore _imageStore;
-    private readonly IUserStore _userStore;
-    private readonly IMessageStore _messageStore;
-    
-    
-    public ChatServiceController(IUserStore userStore, IImageStore imageStore, IMessageStore messageStore)
+    private readonly IImageService _imageService;
+    private readonly IUserService _userService;
+    private readonly IMessageService _messageService;
+    private readonly IConversationService _conversationService;
+
+
+    public ChatServiceController(IUserService userService, IImageService imageService, IMessageService messageService, IConversationService conversationService)
     {
-        _userStore = userStore;
-        _imageStore = imageStore;
-        _messageStore = messageStore;
+        _userService = userService;
+        _imageService = imageService;
+        _messageService = messageService;
+        _conversationService = conversationService;
     }
     
     
     [HttpPost]
     public async Task<ActionResult<User>> AddUser(User user)
     {
-        var existingProfile = await _userStore.GetUser(user.Username);
+        var existingProfile = await _userService.GetUser(user.Username);
         if (existingProfile != null)
         {
             return Conflict($"A user with username {user.Username} already exists");
         }
-        await _userStore.UpsertUser(user);
+        await _userService.UpdateUser(user);
         return CreatedAtAction(nameof(GetUser), new {username = user.Username},
             user); 
     }
@@ -39,7 +42,7 @@ public class ChatServiceController : ControllerBase
     [HttpGet("{username}")]
     public async Task<ActionResult<User>> GetUser(string username)
     {
-        var user = await _userStore.GetUser(username);
+        var user = await _userService.GetUser(username);
         if (user == null)
         {
             return NotFound($"A User with username {username} was not found");
@@ -58,7 +61,7 @@ public class ChatServiceController : ControllerBase
         {
             return BadRequest("File cannot be null or empty.");
         }
-        var imageId =  await _imageStore.UploadImage(request.File);
+        var imageId =  await _imageService.UploadImage(request.File);
        return new ImageResponse(imageId);
     }
     
@@ -69,7 +72,7 @@ public class ChatServiceController : ControllerBase
     
     public async Task<ActionResult<byte[]>> DownloadImage(string id)
     {
-        var image = await _imageStore.GetImageById(id);
+        var image = await _imageService.GetImageById(id);
 
         if (image == null)
         {
@@ -78,18 +81,47 @@ public class ChatServiceController : ControllerBase
 
         return Ok(image.File);
     }
-    
-    
+
+
     [HttpPost]
-    [Route("messages")]
-    public async Task<ActionResult<MessageResponse>> AddMessage(MessageRequest message)
+    [Route("conversations")]
+    public async Task<ActionResult<Conversation>> StartConversation(ConversationRequest request)
     {
         
-        var x =await _messageStore.AddMessage(message);
-        var messageResponse = new MessageResponse(x);
+        if ((request.Participants == null)||
+            (request.Participants.Count != 2))
+        {
+            return BadRequest("Two Participants are Required");
+        }
+        
+        var existingProfile1 = await _userService.GetUser(request.Participants[0]);
+        var existingProfile2 = await _userService.GetUser(request.Participants[1]);
+        if ((existingProfile1 == null) || (existingProfile2 == null))
+        {
+            return NotFound("Either one or both of the mentioned participants don't exist");
+        }
+        
+        
+        
+        // 409 if conversation exists
+
+        Conversation response = await _conversationService.CreateConvo(request);
+        
+    
+        return CreatedAtAction(nameof(StartConversation), response);
+    }
+
+    [HttpPost]
+    [Route("conversations/{conversationId}/messages")]
+    public async Task<ActionResult<MessageResponse>> AddMessage(MessageRequest message, string conversationId)
+    {
+        
+        long x =await _messageService.AddMessage(message,conversationId);
+        MessageResponse messageResponse = new MessageResponse(x);
         return CreatedAtAction(nameof(AddMessage), messageResponse);
 
     }
+    
 }
 
 

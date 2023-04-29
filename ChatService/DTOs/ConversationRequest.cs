@@ -1,6 +1,6 @@
 namespace ChatService.DTOs;
 
 public record ConversationRequest(
-    Array Participants,
+    List<string> Participants,
     MessageRequest Message
     );
