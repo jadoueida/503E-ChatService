@@ -103,6 +103,7 @@ public class ChatServiceController : ControllerBase
         
         
         
+        
         // 409 if conversation exists
 
         Conversation response = await _conversationService.CreateConvo(request);
@@ -115,13 +116,43 @@ public class ChatServiceController : ControllerBase
     [Route("conversations/{conversationId}/messages")]
     public async Task<ActionResult<MessageResponse>> AddMessage(MessageRequest message, string conversationId)
     {
+        var existingMessage = await _messageService.GetMessage(message.MessageId);
+        if (existingMessage != null)
+        {
+            return Conflict($"A message with MessageId {message.MessageId} already exists");
+        }
         
-        long x =await _messageService.AddMessage(message,conversationId);
-        MessageResponse messageResponse = new MessageResponse(x);
+
+        long createdUnixTime =await _messageService.AddMessage(message,conversationId);
+        MessageResponse messageResponse = new MessageResponse(createdUnixTime);
         return CreatedAtAction(nameof(AddMessage), messageResponse);
 
     }
+
+    [HttpGet]
+    [Route("conversations/{conversationId}/messages")]
+    public async Task<ActionResult<List<Message>>> GetConvoMessages(string conversationId, int offset, int limit,long lastSeenMessageTime)
+    {
+        List<Message> messages = await _messageService.GetConversationMessages(conversationId, offset, limit,lastSeenMessageTime);
+        return CreatedAtAction(nameof(GetConvoMessages), messages);
+    }
     
+    [HttpGet]
+    [Route("conversations")]
+    public async Task<IActionResult> GetConversations(string username, int offset, int limit, long lastSeenConversationTime)
+    {
+        username ??= "";
+        offset = offset == 0 ? 0 : offset;
+        limit = limit == 0 ? 50 : limit;
+        lastSeenConversationTime = lastSeenConversationTime == 0 ? 0 : lastSeenConversationTime;
+
+
+        var conversations = await _conversationService.GetConversations(username, offset, limit, lastSeenConversationTime);
+
+
+        return Ok(conversations);
+    }
+
 }
 
 

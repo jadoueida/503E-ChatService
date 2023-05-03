@@ -1,11 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ChatService.DTOs;
 
 public record Message(
-    string MessageId,
-    string ConversationId,
-    string SenderUsername,
-    string Text,
-    long CreatedUnixTime
+    [Required] string MessageId,
+    [Required] string ConversationId,
+    [Required] string SenderUsername,
+    [Required] string Text,
+    [Required] long CreatedUnixTime
 );
 
     

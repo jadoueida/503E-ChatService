@@ -31,13 +31,40 @@ public class CosmosConversationStore : IConversationStore
         await Container.UpsertItemAsync(conversationEntity);
         return;
     }
+    
+    public async Task<List<Conversation>> GetConversations(string username, int offset, int limit, long lastSeenConversationTime)
+    {
+        var queryDefinition = new QueryDefinition(
+                "SELECT TOP(@limit) c.* FROM conversations c JOIN conversations-participants cp ON c.conversationId = cp.conversationId WHERE c.type = 'conversation' AND c.modifiedUnixTime > @lastSeenConversationTime AND cp.participantUsername = @username ORDER BY c.modifiedUnixTime OFFSET @offset;")
+            .WithParameter("@username", username)
+            .WithParameter("@lastSeenConversationTime", lastSeenConversationTime)
+            .WithParameter("@offset", offset)
+            .WithParameter("@limit", limit);
+
+        var conversations = new List<Conversation>();
+
+        var queryResult = Container.GetItemQueryIterator<Conversation>(queryDefinition);
+
+        while (queryResult.HasMoreResults)
+        {
+            var response = await queryResult.ReadNextAsync();
+            conversations.AddRange(response.Select(r => new Conversation(r.ConversationId, r.ModifiedUnixTime)).ToList());
+        }
+
+        return conversations;
+    }
+
+    public async Task UpdateConversationTime(string conversationId, long dateTime)
+    {
+        await Container.ReplaceItemAsync(new ConversationEntity(id:conversationId,modifiedUnixTime:dateTime), conversationId);
+    }
 
 
     private static ConversationEntity ToEntity(Conversation conversation)
     {
         return new ConversationEntity(
-            Id: conversation.ConversationId,
-            ModifiedUnixTime: conversation.ModifiedUnixTime
+            id: conversation.ConversationId,
+            modifiedUnixTime: conversation.ModifiedUnixTime
         );
     }
     
