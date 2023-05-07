@@ -1,6 +1,9 @@
+using System.Net;
 using System.Net.Mime;
+using System.Web;
 using ChatService.DTOs;
 using ChatService.Storage;
+using Newtonsoft.Json;
 
 namespace ChatService.Services;
 
@@ -28,20 +31,42 @@ public class MessageService : IMessageService
         return _messageStore.AddMessage(ToMessage(message,conversationId, dateTime));
     }
 
-    public Task<List<Message>> GetConversationMessages(string conversationId, int offset, int limit, long lastSeenMessageTime)
+    public Task<MessagesResponse> GetConversationMessages(string conversationId, string? continuationToken, int limit, long lastSeenMessageTime)
     {
-        return _messageStore.GetConversationMessages(conversationId, offset, limit, lastSeenMessageTime);
+        if (continuationToken == null)
+        {
+            
+            var resultTask = _messageStore.GetFirstConversationMessages(conversationId,limit,lastSeenMessageTime);
+            var result = resultTask.Result;
+            return Task.FromResult(ToMessagesResponse(result, conversationId, limit.ToString(), lastSeenMessageTime.ToString() ));
+        }
+        else
+        {
+            string notNullContinuationToken = JsonConvert.DeserializeObject<string>(continuationToken);
+            //string notNullContinuationToken = continuationToken;
+            var resultTask =  _messageStore.GetConversationMessages(conversationId,notNullContinuationToken,limit,lastSeenMessageTime);
+            var result = resultTask.Result;
+            return Task.FromResult(ToMessagesResponse(result, conversationId, limit.ToString(), lastSeenMessageTime.ToString() ));
+        }
     }
 
     public Task<Message?> GetMessage(string messageId)
     {
         return _messageStore.GetMessage(messageId);
     }
+
+    private MessagesResponse ToMessagesResponse((List<Message> Messages, string ContinuationToken) result, string conversationId, string limit, string lastSeenMessageTime)
+    {
+        return new MessagesResponse(
+            Messages:result.Messages,
+            NextUri: WebUtility.UrlEncode("/api/conversations/{" + conversationId + "}/messages?&limit={" + limit + "}&lastSeenMessageTime={" + lastSeenMessageTime + "}&continuationToken={" + result.ContinuationToken + "}")
+        );
+    }
     
     private Message ToMessage(MessageRequest message, string conversationId, long dateTime)
     {
         return new Message(
-            MessageId: message.MessageId,
+            id: message.MessageId,
             ConversationId: conversationId,
             SenderUsername: message.SenderUsername,
             Text : message.Text,

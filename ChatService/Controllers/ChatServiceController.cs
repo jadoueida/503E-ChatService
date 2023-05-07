@@ -100,10 +100,18 @@ public class ChatServiceController : ControllerBase
         {
             return NotFound("Either one or both of the mentioned participants don't exist");
         }
-        
-        
-        
-        
+        string potentialConversationId1 = request.Participants[0] + "_" + request.Participants[1];
+        string potentialConversationId2 = request.Participants[1] + "_" + request.Participants[0];
+        var existingConversation1 = await _conversationService.GetConversationById(potentialConversationId1);
+        var existingConversation2 = await _conversationService.GetConversationById(potentialConversationId2);
+        if ((existingConversation1 != null)||
+            (existingConversation2 != null))
+        {
+            return Conflict("The conversation already exists");
+        }
+
+
+
         // 409 if conversation exists
 
         Conversation response = await _conversationService.CreateConvo(request);
@@ -122,6 +130,17 @@ public class ChatServiceController : ControllerBase
             return Conflict($"A message with MessageId {message.MessageId} already exists");
         }
         
+        var existingConversation = await _conversationService.GetConversationById(conversationId);
+        if (existingConversation == null)
+        {
+            return NotFound("The requested conversation does not exist");
+        }
+        if ((message.SenderUsername != existingConversation.Username1)&&
+            (message.SenderUsername!=existingConversation.Username2))
+        {
+            return BadRequest("The Sender User is not a part of the mentioned conversation exist");
+        }
+        
 
         long createdUnixTime =await _messageService.AddMessage(message,conversationId);
         MessageResponse messageResponse = new MessageResponse(createdUnixTime);
@@ -131,26 +150,29 @@ public class ChatServiceController : ControllerBase
 
     [HttpGet]
     [Route("conversations/{conversationId}/messages")]
-    public async Task<ActionResult<List<Message>>> GetConvoMessages(string conversationId, int offset, int limit,long lastSeenMessageTime)
+    public async Task<ActionResult<MessagesResponse>> GetConvoMessages(string conversationId, string? continuationToken = null, int limit = 50,long lastSeenMessageTime = 0)
     {
-        List<Message> messages = await _messageService.GetConversationMessages(conversationId, offset, limit,lastSeenMessageTime);
-        return CreatedAtAction(nameof(GetConvoMessages), messages);
+        var existingConversation = await _conversationService.GetConversationById(conversationId);
+        if (existingConversation == null)
+        {
+            return NotFound("The requested conversation does not exist");
+        }
+        var messages = await _messageService.GetConversationMessages(conversationId, continuationToken, limit,lastSeenMessageTime);
+        return Ok(messages);
     }
     
     [HttpGet]
     [Route("conversations")]
-    public async Task<IActionResult> GetConversations(string username, int offset, int limit, long lastSeenConversationTime)
+    public async Task<ActionResult<ConversationsResponse>> GetConversations(string username, string? continuationToken = null, int limit=50, long lastSeenConversationTime=0)
     {
-        username ??= "";
-        offset = offset == 0 ? 0 : offset;
-        limit = limit == 0 ? 50 : limit;
-        lastSeenConversationTime = lastSeenConversationTime == 0 ? 0 : lastSeenConversationTime;
-
-
-        var conversations = await _conversationService.GetConversations(username, offset, limit, lastSeenConversationTime);
-
-
+        var existingUser = await _userService.GetUser(username);
+        if (existingUser == null)
+        {
+            return NotFound("The user of the requested conversations does not exist");
+        }
+        var conversations = await _conversationService.GetConversations(username, continuationToken, limit, lastSeenConversationTime);
         return Ok(conversations);
+        
     }
 
 }

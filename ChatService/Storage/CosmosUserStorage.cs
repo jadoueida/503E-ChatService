@@ -1,7 +1,7 @@
 using System.Net;
-using Microsoft.Azure.Cosmos;
-using ChatService.DTOs;
 using ChatService.Storage.Entities;
+using Microsoft.Azure.Cosmos;
+using User = ChatService.DTOs.User;
 
 namespace ChatService.Storage;
 
@@ -16,7 +16,7 @@ public class CosmosUserStorage : IUserStore
     
     private Container Container => _cosmosClient.GetDatabase("users").GetContainer("users");
 
-    public async Task UpsertUser(ChatService.DTOs.User user)
+    public async Task UpsertUser(User user)
     {
         if (user == null ||
             string.IsNullOrWhiteSpace(user.Username) ||
@@ -30,7 +30,7 @@ public class CosmosUserStorage : IUserStore
         await Container.UpsertItemAsync(ToEntity(user));
     }
     
-    public async Task<DTOs.User?> GetUser(string username)
+    public async Task<User?> GetUser(string username)
     {
         try
         {
@@ -58,7 +58,7 @@ public class CosmosUserStorage : IUserStore
     {
         try
         {
-            await Container.DeleteItemAsync<DTOs.User>(
+            await Container.DeleteItemAsync<User>(
                 id: username,
                 partitionKey: new PartitionKey(username)
             );
@@ -76,9 +76,9 @@ public class CosmosUserStorage : IUserStore
     
     
     //WHY STATIC
-    private static UserEntity ToEntity(DTOs.User user)
+    private static UserEntity ToEntity(User user)
     {
-        return new ChatService.Storage.Entities.UserEntity(
+        return new UserEntity(
             partitionKey: user.Username,
             id: user.Username,
             user.FirstName,
@@ -87,9 +87,9 @@ public class CosmosUserStorage : IUserStore
         );
     }
 
-    private static DTOs.User ToUser(ChatService.Storage.Entities.UserEntity entity)
+    private static User ToUser(UserEntity entity)
     {
-        return new DTOs.User(
+        return new User(
             Username: entity.id,
             entity.FirstName,
             entity.LastName,

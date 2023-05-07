@@ -1,8 +1,9 @@
 using System.Net;
-using System.Runtime.CompilerServices;
-using Microsoft.Azure.Cosmos;
 using ChatService.DTOs;
 using ChatService.Storage.Entities;
+using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using ServiceStack;
 
 namespace ChatService.Storage;
 
@@ -19,10 +20,10 @@ public class CosmosMessageStore : IMessageStore
     private Container Container => _cosmosClient.GetDatabase("messages").GetContainer("messages");
 
 
-    public async Task<long> AddMessage(DTOs.Message message)
+    public async Task<long> AddMessage(Message message)
     {
         if (message == null ||
-            string.IsNullOrWhiteSpace(message.MessageId) ||
+            string.IsNullOrWhiteSpace(message.id) ||
             string.IsNullOrWhiteSpace(message.SenderUsername) ||
             string.IsNullOrWhiteSpace(message.Text) ||
             string.IsNullOrWhiteSpace(message.ConversationId) ||
@@ -37,27 +38,64 @@ public class CosmosMessageStore : IMessageStore
         return messageEntity.CreatedUnixTime;
     }
     
-    public async Task<List<Message>> GetConversationMessages(string conversationId, int offset, int limit, long lastSeenMessageTime)
+    public async Task<(List<Message> Messages, string ContinuationToken)> GetConversationMessages(string conversationId, string? continuationToken, int limit, long lastSeenMessageTime)
     {
-        var queryDefinition = new QueryDefinition("SELECT * FROM Messages WHERE Messages.ConversationId = @conversationId AND Messages.CreatedUnixTime >= @lastSeenMessageTime ORDER BY Messages.CreatedUnixTime OFFSET @offset LIMIT @limit")
+        var queryDefinition = new QueryDefinition(
+                "SELECT TOP @limit * FROM Messages WHERE Messages.ConversationId = @conversationId AND Messages.CreatedUnixTime >= @lastSeenMessageTime ORDER BY Messages.CreatedUnixTime")
             .WithParameter("@conversationId", conversationId)
-            .WithParameter("@lastSeenMessageTime", lastSeenMessageTime)
-            .WithParameter("@offset", offset)
+            .WithParameter("@lastSeenMessagesTime", lastSeenMessageTime)
             .WithParameter("@limit", limit);
-        var queryIterator = Container.GetItemQueryIterator<Message>(queryDefinition);
+
+        var queryOptions = new QueryRequestOptions
+        {
+            MaxItemCount = limit
+        };
 
         var messages = new List<Message>();
-        while (queryIterator.HasMoreResults)
+        string newContinuationToken = null;
+
+        var queryResult = Container.GetItemQueryIterator<MessageEntity>(queryDefinition, requestOptions: queryOptions, continuationToken:continuationToken);
+
+        while (queryResult.HasMoreResults && messages.Count < limit)
         {
-            var response = await queryIterator.ReadNextAsync();
-            messages.AddRange(response.ToList());
+            var response = await queryResult.ReadNextAsync();
+            messages.AddRange(response.Select(r => new Message(r.id, r.ConversationId, r.SenderUsername, r.Text,r.CreatedUnixTime)).ToList());
+            newContinuationToken = response.ContinuationToken;
         }
 
-        return messages;
+        return (messages, newContinuationToken);
+    }
+    
+    public async Task<(List<Message> Messages, string ContinuationToken)> GetFirstConversationMessages(string conversationId, int limit, long lastSeenMessageTime)
+    {
+        var queryDefinition = new QueryDefinition(
+                "SELECT * FROM Messages WHERE Messages.ConversationId = @conversationId AND Messages.CreatedUnixTime >= @lastSeenMessageTime ORDER BY Messages.CreatedUnixTime")
+            .WithParameter("@conversationId", conversationId)
+            .WithParameter("@lastSeenMessageTime", lastSeenMessageTime);
+
+        var queryOptions = new QueryRequestOptions
+        {
+            MaxItemCount = limit
+        };
+
+
+        var messages = new List<Message>();
+        string newContinuationToken = null;
+
+        var queryResult = Container.GetItemQueryIterator<MessageEntity>(queryDefinition, requestOptions: queryOptions);
+
+        while (queryResult.HasMoreResults && messages.Count < limit)
+        {
+            var response = await queryResult.ReadNextAsync();
+            messages.AddRange(response.Select(r => new Message(r.id, r.ConversationId, r.SenderUsername, r.Text,r.CreatedUnixTime)).ToList());
+            newContinuationToken = response.ContinuationToken;
+        }
+
+        return (messages, newContinuationToken);
     }
 
 
-public async Task<Message?> GetMessage(string messageId)
+    public async Task<Message?> GetMessage(string messageId)
 {
      try
      {
@@ -85,7 +123,7 @@ public async Task<Message?> GetMessage(string messageId)
     private static MessageEntity ToEntity(Message message)
     {
         return new MessageEntity(
-            id: message.MessageId,
+            id: message.id,
             ConversationId: message.ConversationId,
             SenderUsername: message.SenderUsername,
             Text: message.Text,
@@ -93,10 +131,10 @@ public async Task<Message?> GetMessage(string messageId)
         );
     }
     
-    private static Message? ToMessage(MessageEntity entity)
+    private static Message ToMessage(MessageEntity entity)
     {
         return new Message(
-            MessageId: entity.id,
+            id: entity.id,
             ConversationId: entity.ConversationId,
             SenderUsername: entity.SenderUsername,
             Text:entity.Text,

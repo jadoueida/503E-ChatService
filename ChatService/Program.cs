@@ -28,7 +28,6 @@ builder.Services.AddSingleton<IUserStore,CosmosUserStorage>();
 builder.Services.AddSingleton<IMessageStore,CosmosMessageStore>();
 builder.Services.AddSingleton<IImageStore, BlobImageStorage>();
 builder.Services.AddSingleton<IConversationStore, CosmosConversationStore>();
-builder.Services.AddSingleton<IConversationParticipantStore, CosmosConversationParticipantStore>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IImageService, ImageService>();
 builder.Services.AddSingleton<IMessageService, MessageService>();
