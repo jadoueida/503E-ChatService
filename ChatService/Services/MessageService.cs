@@ -33,21 +33,9 @@ public class MessageService : IMessageService
 
     public Task<MessagesResponse> GetConversationMessages(string conversationId, string? continuationToken, int limit, long lastSeenMessageTime)
     {
-        if (continuationToken == null)
-        {
-            
-            var resultTask = _messageStore.GetFirstConversationMessages(conversationId,limit,lastSeenMessageTime);
-            var result = resultTask.Result;
-            return Task.FromResult(ToMessagesResponse(result, conversationId, limit.ToString(), lastSeenMessageTime.ToString() ));
-        }
-        else
-        {
-            string notNullContinuationToken = JsonConvert.DeserializeObject<string>(continuationToken);
-            //string notNullContinuationToken = continuationToken;
-            var resultTask =  _messageStore.GetConversationMessages(conversationId,notNullContinuationToken,limit,lastSeenMessageTime);
-            var result = resultTask.Result;
-            return Task.FromResult(ToMessagesResponse(result, conversationId, limit.ToString(), lastSeenMessageTime.ToString() ));
-        }
+        var resultTask =  _messageStore.GetConversationMessages(conversationId,continuationToken,limit,lastSeenMessageTime);
+        var result = resultTask.Result;
+        return Task.FromResult(ToMessagesResponse(result, conversationId, limit.ToString(), lastSeenMessageTime.ToString() ));
     }
 
     public Task<Message?> GetMessage(string messageId)
@@ -59,7 +47,7 @@ public class MessageService : IMessageService
     {
         return new MessagesResponse(
             Messages:result.Messages,
-            NextUri: WebUtility.UrlEncode("/api/conversations/{" + conversationId + "}/messages?&limit={" + limit + "}&lastSeenMessageTime={" + lastSeenMessageTime + "}&continuationToken={" + result.ContinuationToken + "}")
+            NextUri: "/api/conversations/{" + conversationId + "}/messages?&limit={" + limit + "}&lastSeenMessageTime={" + lastSeenMessageTime + "}&continuationToken={" + result.ContinuationToken.Replace("\"","'") + "}"
         );
     }
     

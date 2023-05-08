@@ -30,22 +30,9 @@ public class ConversationService : IConversationService
     public Task<ConversationsResponse> GetConversations(string username, string? continuationToken, int limit,
         long lastSeenConversationTime)
     {
-        if (continuationToken == null)
-        {
-            
-            var resultTask = _conversationStore.GetFirstConversations(username, limit, lastSeenConversationTime);
-            var result = resultTask.Result;
-            return Task.FromResult(ToConversationsResponse(result,username, limit.ToString(), lastSeenConversationTime.ToString()));
-        }
-        else
-        {
-            string notNullContinuationToken = JsonConvert.DeserializeObject<string>(continuationToken);
-            //string notNullContinuationToken = continuationToken;
-            var resultTask =  _conversationStore.GetConversations(username, notNullContinuationToken, limit, lastSeenConversationTime);
-            var result = resultTask.Result;
-            return Task.FromResult(ToConversationsResponse(result,username, limit.ToString(), lastSeenConversationTime.ToString()));
-        }
-        
+        var resultTask =  _conversationStore.GetConversations(username, continuationToken, limit, lastSeenConversationTime);
+        var result = resultTask.Result;
+        return Task.FromResult(ToConversationsResponse(result,username, limit.ToString(), lastSeenConversationTime.ToString()));
     }
 
     public Task<Conversation?> GetConversationById(string conversationId)

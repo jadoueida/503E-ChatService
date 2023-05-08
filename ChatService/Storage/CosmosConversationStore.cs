@@ -38,7 +38,7 @@ public class CosmosConversationStore : IConversationStore
     public async Task<(List<Conversation> Conversations, string ContinuationToken)> GetConversations(string username, string? continuationToken, int limit, long lastSeenConversationTime)
     {
         var queryDefinition = new QueryDefinition(
-                "SELECT TOP @limit * FROM conversations WHERE conversations.ModifiedUnixTime > @lastSeenConversationTime AND (conversations.Username1 = @username OR conversations.Username2 = @username) ORDER BY conversations.ModifiedUnixTime")
+                "SELECT * FROM conversations WHERE conversations.ModifiedUnixTime > @lastSeenConversationTime AND (conversations.Username1 = @username OR conversations.Username2 = @username) ORDER BY conversations.ModifiedUnixTime")
             .WithParameter("@username", username)
             .WithParameter("@lastSeenConversationTime", lastSeenConversationTime);
 
@@ -49,41 +49,18 @@ public class CosmosConversationStore : IConversationStore
 
         var conversations = new List<Conversation>();
         string newContinuationToken = null;
-
-        var queryResult = Container.GetItemQueryIterator<ConversationEntity>(queryDefinition, requestOptions: queryOptions, continuationToken:continuationToken);
+        FeedIterator<ConversationEntity>? queryResult = null;
+        if (continuationToken == null)
+        {
+            queryResult = Container.GetItemQueryIterator<ConversationEntity>(queryDefinition, requestOptions: queryOptions);
+        }
+        else{queryResult = Container.GetItemQueryIterator<ConversationEntity>(queryDefinition, requestOptions: queryOptions, continuationToken:continuationToken);}
 
         while (queryResult.HasMoreResults && conversations.Count < limit)
         {
             var response = await queryResult.ReadNextAsync();
             conversations.AddRange(response.Select(r => new Conversation(r.id, r.Username1, r.Username2, r.ModifiedUnixTime)).ToList());
-            newContinuationToken = JsonConvert.SerializeObject(response.ContinuationToken);
-        }
-
-        return (conversations, newContinuationToken);
-    }
-
-    public async Task<(List<Conversation> Conversations, string ContinuationToken)> GetFirstConversations(string username, int limit, long lastSeenConversationTime)
-    {
-        var queryDefinition = new QueryDefinition(
-                "SELECT * FROM conversations WHERE conversations.ModifiedUnixTime > @lastSeenConversationTime AND (conversations.Username1 = @username OR conversations.Username2 = @username) ORDER BY conversations.ModifiedUnixTime")
-            .WithParameter("@username", username)
-            .WithParameter("@lastSeenConversationTime", lastSeenConversationTime);
-
-        var queryOptions = new QueryRequestOptions
-        {
-            MaxItemCount = limit,
-        };
-
-        var conversations = new List<Conversation>();
-        string newContinuationToken = null;
-
-        var queryResult = Container.GetItemQueryIterator<ConversationEntity>(queryDefinition, requestOptions: queryOptions);
-
-        while (queryResult.HasMoreResults && conversations.Count < limit)
-        {
-            var response = await queryResult.ReadNextAsync();
-            conversations.AddRange(response.Select(r => new Conversation(r.id, r.Username1, r.Username2, r.ModifiedUnixTime)));
-            newContinuationToken = JsonConvert.SerializeObject(response.ContinuationToken);
+            newContinuationToken = response.ContinuationToken;
         }
 
         return (conversations, newContinuationToken);
