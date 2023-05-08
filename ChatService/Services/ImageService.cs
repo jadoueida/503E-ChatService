@@ -22,4 +22,9 @@ public class ImageService : IImageService
     {
         return _imageStore.GetImageById(imageId);
     }
+
+    public Task DeleteImage(string imageId)
+    {
+        return _imageStore.DeleteImage(imageId);
+    }
 }

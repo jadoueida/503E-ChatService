@@ -7,5 +7,7 @@ public interface IImageService
     Task<string> UploadImage(IFormFile file);
     
     Task<Image?> GetImageById(string imageId);
-    
+
+    Task DeleteImage(string imageId);
+
 }

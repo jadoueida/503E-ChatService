@@ -95,6 +95,29 @@ public class CosmosMessageStore : IMessageStore
      }
 }
 
+    public Task DeleteMessage(string messageId)
+    {
+        try
+        {
+            Container.DeleteItemAsync<Profile>(
+                id: messageId,
+                partitionKey: new PartitionKey(messageId)
+            );
+        }
+        catch (CosmosException e)
+        {
+            if (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            throw;
+        }
+
+        return null;
+    }
+
+
 
     private static MessageEntity ToEntity(Message message)
     {

@@ -43,6 +43,11 @@ public class MessageService : IMessageService
         return _messageStore.GetMessage(messageId);
     }
 
+    public Task DeleteMessage(string messageId)
+    {
+        return _messageStore.DeleteMessage(messageId);
+    }
+
     private MessagesResponse ToMessagesResponse((List<Message> Messages, string ContinuationToken) result, string conversationId, string limit, string lastSeenMessageTime)
     {
         return new MessagesResponse(

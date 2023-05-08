@@ -14,4 +14,6 @@ public interface IMessageStore
 
     Task<Message?> GetMessage(string messageId);
 
+    Task DeleteMessage(string messageId);
+
 }

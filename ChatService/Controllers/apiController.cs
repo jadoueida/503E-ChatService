@@ -77,6 +77,20 @@ public class apiController : ControllerBase
     }
     
     
+    [HttpDelete]
+    [Route("image/{imageId}")]
+    public async Task<ActionResult<ImageResponse>>DeleteImage(string imageId)
+    {
+        var existingImage = _imageService.GetImageById(imageId);
+        if (existingImage == null)
+        { 
+            return NotFound("The Image to be deleted was not found");
+        }
+
+        await _imageService.DeleteImage(imageId);
+        return Ok();
+    }
+    
     
     
     [HttpGet("images/{id}")]
@@ -164,6 +178,23 @@ public class apiController : ControllerBase
             long createdUnixTime = await _messageService.AddMessage(message, conversationId);
             MessageResponse messageResponse = new MessageResponse(createdUnixTime);
             return CreatedAtAction(nameof(AddMessage), messageResponse);
+        }
+    }
+    
+    [HttpDelete]
+    [Route("conversations/{conversationId}/messages")]
+    public async Task<ActionResult<MessagesResponse>> DeleteMessage(string messageId)
+    {
+        using(_logger.BeginScope("{MessageId}",messageId))
+        {
+            var existingConversation = await _messageService.GetMessage(messageId);
+            if (existingConversation == null)
+            {
+                return NotFound("The requested message does not exist");
+            }
+
+            await _messageService.DeleteMessage(messageId);
+            return Ok();
         }
     }
 

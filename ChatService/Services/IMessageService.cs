@@ -10,4 +10,6 @@ public interface IMessageService
 
     Task<Message?> GetMessage(string messageId);
 
+    Task DeleteMessage(string messageId);
+
 }
