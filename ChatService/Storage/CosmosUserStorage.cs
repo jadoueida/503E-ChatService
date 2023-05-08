@@ -83,7 +83,7 @@ public class CosmosUserStorage : IUserStore
             id: user.Username,
             user.FirstName,
             user.LastName,
-            user.ProfilePicId
+            user.ProfilePictureId
         );
     }
 

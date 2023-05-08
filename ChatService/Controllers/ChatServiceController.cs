@@ -15,14 +15,17 @@ public class ChatServiceController : ControllerBase
     private readonly IUserService _userService;
     private readonly IMessageService _messageService;
     private readonly IConversationService _conversationService;
+    private readonly ILogger<ChatServiceController> _logger;
 
 
-    public ChatServiceController(IUserService userService, IImageService imageService, IMessageService messageService, IConversationService conversationService)
+    public ChatServiceController(IUserService userService, IImageService imageService, IMessageService messageService,
+        IConversationService conversationService, ILogger<ChatServiceController> logger)
     {
         _userService = userService;
         _imageService = imageService;
         _messageService = messageService;
         _conversationService = conversationService;
+        _logger = logger;
     }
     
     

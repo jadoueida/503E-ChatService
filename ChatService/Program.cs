@@ -44,6 +44,8 @@ builder.Services.AddSingleton(sp =>
     return new BlobServiceClient(blobOptions.Value.ConnectionString);
 });
 
+builder.Services.AddApplicationInsightsTelemetry();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

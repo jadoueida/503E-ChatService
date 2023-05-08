@@ -25,6 +25,7 @@
 
     <ItemGroup>
       <PackageReference Include="Azure.Storage.Blobs" Version="12.15.0" />
+      <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0-beta3" />
       <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0-preview.1.23110.8" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0-preview.1.23110.8" />
