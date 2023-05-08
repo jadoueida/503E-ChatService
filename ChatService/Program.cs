@@ -24,11 +24,11 @@ builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection
 
 //Add services
 
-builder.Services.AddSingleton<IUserStore,CosmosUserStorage>();
+builder.Services.AddSingleton<IProfileStore,CosmosProfileStorage>();
 builder.Services.AddSingleton<IMessageStore,CosmosMessageStore>();
 builder.Services.AddSingleton<IImageStore, BlobImageStorage>();
 builder.Services.AddSingleton<IConversationStore, CosmosConversationStore>();
-builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IProfileService, ProfileService>();
 builder.Services.AddSingleton<IImageService, ImageService>();
 builder.Services.AddSingleton<IMessageService, MessageService>();
 builder.Services.AddSingleton<IConversationService, ConversationService>();

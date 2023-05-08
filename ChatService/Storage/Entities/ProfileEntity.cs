@@ -1,6 +1,6 @@
 namespace ChatService.Storage.Entities;
 
-public record UserEntity(
+public record ProfileEntity(
     string partitionKey, 
     string id, 
     string FirstName, 

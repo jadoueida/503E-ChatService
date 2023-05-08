@@ -1,9 +1,9 @@
 using ChatService.DTOs;
 namespace ChatService.Storage;
 
-public interface IUserStore
+public interface IProfileStore
 {
-    Task UpsertUser(User user);
-    Task<User?> GetUser(string username);
-    Task DeleteUser(string username);
+    Task UpsertProfile(Profile profile);
+    Task<Profile?> GetProfile(string username);
+    Task DeleteProfile(string username);
 }

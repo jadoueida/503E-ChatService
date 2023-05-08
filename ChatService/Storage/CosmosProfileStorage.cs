@@ -1,40 +1,41 @@
 using System.Net;
+using ChatService.DTOs;
 using ChatService.Storage.Entities;
 using Microsoft.Azure.Cosmos;
-using User = ChatService.DTOs.User;
 
 namespace ChatService.Storage;
 
-public class CosmosUserStorage : IUserStore
+public class CosmosProfileStorage : IProfileStore
 {
     private readonly CosmosClient _cosmosClient;
     
-    public CosmosUserStorage(CosmosClient cosmosClient)
+    public CosmosProfileStorage(CosmosClient cosmosClient)
     {
         _cosmosClient = cosmosClient;
     }
     
     private Container Container => _cosmosClient.GetDatabase("users").GetContainer("users");
 
-    public async Task UpsertUser(User user)
+    public async Task UpsertProfile(Profile profile)
     {
-        if (user == null ||
-            string.IsNullOrWhiteSpace(user.Username) ||
-            string.IsNullOrWhiteSpace(user.FirstName) ||
-            string.IsNullOrWhiteSpace(user.LastName)
+        if (profile == null ||
+            string.IsNullOrWhiteSpace(profile.Username) ||
+            string.IsNullOrWhiteSpace(profile.FirstName) ||
+            string.IsNullOrWhiteSpace(profile.LastName) ||
+            string.IsNullOrWhiteSpace(profile.ProfilePictureId)
            )
         {
-            throw new ArgumentException($"Invalid profile {user}", nameof(user));
+            throw new ArgumentException($"Invalid profile {profile}", nameof(profile));
         }
 
-        await Container.UpsertItemAsync(ToEntity(user));
+        await Container.UpsertItemAsync(ToEntity(profile));
     }
     
-    public async Task<User?> GetUser(string username)
+    public async Task<Profile?> GetProfile(string username)
     {
         try
         {
-            var entity = await Container.ReadItemAsync<UserEntity>(
+            var entity = await Container.ReadItemAsync<ProfileEntity>(
                 id: username,
                 partitionKey: new PartitionKey(username),
                 new ItemRequestOptions
@@ -42,7 +43,7 @@ public class CosmosUserStorage : IUserStore
                     ConsistencyLevel = ConsistencyLevel.Session
                 }
             );
-            return ToUser(entity);
+            return ToProfile(entity);
         }
         catch (CosmosException e)
         {
@@ -54,11 +55,11 @@ public class CosmosUserStorage : IUserStore
         }
     }
     
-    public async Task DeleteUser(string username)
+    public async Task DeleteProfile(string username)
     {
         try
         {
-            await Container.DeleteItemAsync<User>(
+            await Container.DeleteItemAsync<Profile>(
                 id: username,
                 partitionKey: new PartitionKey(username)
             );
@@ -76,20 +77,20 @@ public class CosmosUserStorage : IUserStore
     
     
     //WHY STATIC
-    private static UserEntity ToEntity(User user)
+    private static ProfileEntity ToEntity(Profile profile)
     {
-        return new UserEntity(
-            partitionKey: user.Username,
-            id: user.Username,
-            user.FirstName,
-            user.LastName,
-            user.ProfilePictureId
+        return new ProfileEntity(
+            partitionKey: profile.Username,
+            id: profile.Username,
+            profile.FirstName,
+            profile.LastName,
+            profile.ProfilePictureId
         );
     }
 
-    private static User ToUser(UserEntity entity)
+    private static Profile ToProfile(ProfileEntity entity)
     {
-        return new User(
+        return new Profile(
             Username: entity.id,
             entity.FirstName,
             entity.LastName,

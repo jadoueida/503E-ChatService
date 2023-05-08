@@ -9,19 +9,19 @@ namespace ChatService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ChatServiceController : ControllerBase
+public class apiController : ControllerBase
 {
     private readonly IImageService _imageService;
-    private readonly IUserService _userService;
+    private readonly IProfileService _profileService;
     private readonly IMessageService _messageService;
     private readonly IConversationService _conversationService;
-    private readonly ILogger<ChatServiceController> _logger;
+    private readonly ILogger<apiController> _logger;
 
 
-    public ChatServiceController(IUserService userService, IImageService imageService, IMessageService messageService,
-        IConversationService conversationService, ILogger<ChatServiceController> logger)
+    public apiController(IProfileService profileService, IImageService imageService, IMessageService messageService,
+        IConversationService conversationService, ILogger<apiController> logger)
     {
-        _userService = userService;
+        _profileService = profileService;
         _imageService = imageService;
         _messageService = messageService;
         _conversationService = conversationService;
@@ -30,34 +30,35 @@ public class ChatServiceController : ControllerBase
     
     
     [HttpPost]
-    public async Task<ActionResult<User>> AddUser(User user)
+    [Route("profile")]
+    public async Task<ActionResult<Profile>> AddProfile(Profile profile)
     {
-        var existingProfile = await _userService.GetUser(user.Username);
+        var existingProfile = await _profileService.GetProfile(profile.Username);
         if (existingProfile != null)
         {
-            return Conflict($"A user with username {user.Username} already exists");
+            return Conflict($"A user with username {profile.Username} already exists");
         }
-        await _userService.UpdateUser(user);
-        return CreatedAtAction(nameof(GetUser), new {username = user.Username},
-            user); 
+        await _profileService.UpdateProfile(profile);
+        return CreatedAtAction(nameof(GetProfile), new {username = profile.Username},
+            profile); 
     }
     
-    [HttpGet("{username}")]
-    public async Task<ActionResult<User>> GetUser(string username)
+    [HttpGet("profile/{username}")]
+    public async Task<ActionResult<Profile>> GetProfile(string username)
     {
-        var user = await _userService.GetUser(username);
-        if (user == null)
+        var profile = await _profileService.GetProfile(username);
+        if (profile == null)
         {
             return NotFound($"A User with username {username} was not found");
         }
             
-        return Ok(user);
+        return Ok(profile);
     }
     
     
     
     [HttpPost]
-    [Route("image")]
+    [Route("images")]
     public async Task<ActionResult<ImageResponse>> UploadImage([FromForm] Image request)
     {
         if (request.File == null || request.File.Length == 0)
@@ -71,7 +72,7 @@ public class ChatServiceController : ControllerBase
     
     
     
-    [HttpGet("image/{id}")]
+    [HttpGet("images/{id}")]
     
     public async Task<ActionResult<byte[]>> DownloadImage(string id)
     {
@@ -97,8 +98,8 @@ public class ChatServiceController : ControllerBase
             return BadRequest("Two Participants are Required");
         }
         
-        var existingProfile1 = await _userService.GetUser(request.Participants[0]);
-        var existingProfile2 = await _userService.GetUser(request.Participants[1]);
+        var existingProfile1 = await _profileService.GetProfile(request.Participants[0]);
+        var existingProfile2 = await _profileService.GetProfile(request.Participants[1]);
         if ((existingProfile1 == null) || (existingProfile2 == null))
         {
             return NotFound("Either one or both of the mentioned participants don't exist");
@@ -168,7 +169,7 @@ public class ChatServiceController : ControllerBase
     [Route("conversations")]
     public async Task<ActionResult<ConversationsResponse>> GetConversations(string username, string? continuationToken = null, int limit=50, long lastSeenConversationTime=0)
     {
-        var existingUser = await _userService.GetUser(username);
+        var existingUser = await _profileService.GetProfile(username);
         if (existingUser == null)
         {
             return NotFound("The user of the requested conversations does not exist");
